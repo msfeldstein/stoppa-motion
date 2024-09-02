@@ -249,12 +249,12 @@ const StopMotionApp = () => {
     }, []);
 
     return (
-        <div className={styles.container} onKeyDown={handleKeyPress} tabIndex={0}>
+        <div className={styles.container}>
             <div className={styles.mainContent}>
                 <div className={styles.cameraContainer}>
                     <video ref={videoRef} autoPlay className={styles.camera}></video>
-                    <canvas ref={onionSkinCanvasRef} width="640" height="480" className={styles.onionSkin}></canvas>
-                    <canvas ref={captureCanvasRef} width="640" height="480" style={{ display: 'none' }}></canvas>
+                    <canvas ref={onionSkinCanvasRef} className={styles.onionSkin}></canvas>
+                    <canvas ref={captureCanvasRef} style={{ display: 'none' }}></canvas>
                     <button onClick={captureImage} className={styles.captureButton} aria-label="Capture Frame"></button>
                 </div>
                 <div className={styles.sidePanel}>
@@ -305,7 +305,7 @@ const StopMotionApp = () => {
                     </button>
                 </div>
             </div>
-            {listening && speechRecognitionSupported && <span className={styles.voiceHint}>Say "capture" to take a photo</span>}
+            {listening && speechRecognitionSupported && <span className={styles.voiceHint}>Say &quot;capture&quot; to take a photo</span>}
         </div>
     );
 };
