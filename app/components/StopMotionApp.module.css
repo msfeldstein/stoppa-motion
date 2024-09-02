@@ -1,0 +1,146 @@
+.container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+.mainContent {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.cameraContainer {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+}
+
+.camera {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.captureButton {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: red;
+    border: 3px solid white;
+    cursor: pointer;
+    outline: none;
+}
+
+.sidePanel {
+    width: 150px;
+    display: flex;
+    flex-direction: column;
+    background-color: #f0f0f0;
+}
+
+.gallery {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+}
+
+.thumbnailContainer {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    touch-action: pan-x;
+}
+
+.thumbnail {
+    width: 100%;
+    height: auto;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+}
+
+.exportButton {
+    padding: 10px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.exportButton:disabled {
+    background-color: #ddd;
+    cursor: not-allowed;
+}
+
+.onionSkin {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 10px;
+}
+
+.controls label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.gallery::after {
+    content: 'Swipe right to delete';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity 0.2s ease-out;
+    pointer-events: none;
+}
+
+.gallery:active::after {
+    opacity: 0.5;
+}
+
+.iconButton {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+}
+
+.iconButton:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.iconButton.active {
+    color: #007bff;
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.voiceHint {
+    display: block;
+    text-align: center;
+    font-size: 0.9em;
+    margin-bottom: 10px;
+}
