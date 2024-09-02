@@ -110,6 +110,21 @@ const StopMotionApp = () => {
         }
     }, [chimeEnabled]);
 
+    const updateOnionSkin = useCallback(() => {
+        if (onionSkinCanvasRef.current && onionSkinEnabled && images.length > 0) {
+            const context = onionSkinCanvasRef.current.getContext('2d');
+            if (context) {
+                context.clearRect(0, 0, 640, 480);
+                const img = new Image();
+                img.onload = () => {
+                    context.globalAlpha = 0.3;
+                    context.drawImage(img, 0, 0, 640, 480);
+                };
+                img.src = images[images.length - 1];
+            }
+        }
+    }, [images, onionSkinEnabled]);
+
     const captureImage = useCallback(() => {
         if (captureCanvasRef.current && videoRef.current) {
             const context = captureCanvasRef.current.getContext('2d');
@@ -127,21 +142,6 @@ const StopMotionApp = () => {
             }
         }
     }, [images, onionSkinEnabled, playChime, updateOnionSkin]);
-
-    const updateOnionSkin = useCallback(() => {
-        if (onionSkinCanvasRef.current && onionSkinEnabled && images.length > 0) {
-            const context = onionSkinCanvasRef.current.getContext('2d');
-            if (context) {
-                context.clearRect(0, 0, 640, 480);
-                const img = new Image();
-                img.onload = () => {
-                    context.globalAlpha = 0.3;
-                    context.drawImage(img, 0, 0, 640, 480);
-                };
-                img.src = images[images.length - 1];
-            }
-        }
-    }, [images, onionSkinEnabled]);
 
     useEffect(() => {
         updateOnionSkin();
