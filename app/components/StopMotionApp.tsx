@@ -16,6 +16,7 @@ const StopMotionApp = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const captureCanvasRef = useRef<HTMLCanvasElement>(null);
     const onionSkinCanvasRef = useRef<HTMLCanvasElement>(null);
+    // @ts-ignore
     const recognitionRef = useRef<SpeechRecognition | null>(null);
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [dragOffset, setDragOffset] = useState(0);
@@ -48,12 +49,13 @@ const StopMotionApp = () => {
 
         // Set up speech recognition
         if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+            // @ts-ignore
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognitionRef.current = new SpeechRecognition();
             recognitionRef.current.continuous = true; // Change back to continuous mode
             recognitionRef.current.interimResults = false; // Disable interim results for more stability
 
-            recognitionRef.current.onresult = (event) => {
+            recognitionRef.current.onresult = (event: any) => {
                 const last = event.results.length - 1;
                 const transcript = event.results[last][0].transcript.trim().toLowerCase();
 
@@ -62,7 +64,7 @@ const StopMotionApp = () => {
                 }
             };
 
-            recognitionRef.current.onerror = (event) => {
+            recognitionRef.current.onerror = (event: any) => {
                 console.error('Speech recognition error', event.error);
                 setListening(false);
                 // Attempt to restart recognition after an error
@@ -79,6 +81,7 @@ const StopMotionApp = () => {
         }
 
         // Initialize AudioContext
+        // @ts-ignore
         audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
 
         return () => {
