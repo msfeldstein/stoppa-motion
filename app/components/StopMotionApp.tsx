@@ -126,7 +126,7 @@ const StopMotionApp = () => {
                 playChime();
             }
         }
-    }, [images, onionSkinEnabled, playChime]);
+    }, [images, onionSkinEnabled, playChime, updateOnionSkin]);
 
     const updateOnionSkin = useCallback(() => {
         if (onionSkinCanvasRef.current && onionSkinEnabled && images.length > 0) {
@@ -285,7 +285,6 @@ const StopMotionApp = () => {
                             <Volume2 size={24} />
                         </button>
                     </div>
-                    {listening && <span className={styles.voiceHint}>Say "capture" to take a photo</span>}
                     <button onClick={exportVideo} className={styles.exportButton} disabled={exporting || images.length === 0}>
                         {exporting ? 'Exporting...' : 'Export Video'}
                     </button>
