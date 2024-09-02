@@ -138,6 +138,25 @@
     background-color: rgba(0, 123, 255, 0.1);
 }
 
+.iconButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.iconButton:disabled:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
 .voiceHint {
     display: block;
     text-align: center;

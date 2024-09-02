@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback, TouchEvent } from 'rea
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 import styles from './StopMotionApp.module.css';
-import { XCircle, Layers, Mic, Volume2 } from 'lucide-react'; // Add these imports for icons
+import { XCircle, Layers, Mic, Volume2, MicOff } from 'lucide-react'; // Add MicOff icon
 
 const StopMotionApp = () => {
     const [images, setImages] = useState<string[]>([]);
@@ -13,6 +13,7 @@ const StopMotionApp = () => {
     const [onionSkinEnabled, setOnionSkinEnabled] = useState(true);
     const [listening, setListening] = useState(false);
     const [chimeEnabled, setChimeEnabled] = useState(true);
+    const [speechRecognitionSupported, setSpeechRecognitionSupported] = useState(true);
     const videoRef = useRef<HTMLVideoElement>(null);
     const captureCanvasRef = useRef<HTMLCanvasElement>(null);
     const onionSkinCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -47,8 +48,12 @@ const StopMotionApp = () => {
                 .catch(err => console.error("Error accessing the camera:", err));
         }
 
-        // Set up speech recognition
-        if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+        // Check for speech recognition support
+        const isSpeechRecognitionSupported = 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
+        setSpeechRecognitionSupported(isSpeechRecognitionSupported);
+
+        if (isSpeechRecognitionSupported) {
+            // Set up speech recognition
             // @ts-ignore
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognitionRef.current = new SpeechRecognition();
@@ -179,6 +184,11 @@ const StopMotionApp = () => {
     };
 
     const toggleListening = () => {
+        if (!speechRecognitionSupported) {
+            alert('Speech recognition is not supported in your browser.');
+            return;
+        }
+
         if (recognitionRef.current) {
             if (listening) {
                 recognitionRef.current.stop();
@@ -277,8 +287,10 @@ const StopMotionApp = () => {
                             onClick={toggleListening}
                             className={`${styles.iconButton} ${listening ? styles.active : ''}`}
                             aria-label="Toggle Voice Commands"
+                            title={speechRecognitionSupported ? "Toggle Voice Commands" : "Voice Commands Not Supported"}
+                            disabled={!speechRecognitionSupported}
                         >
-                            <Mic size={24} />
+                            {speechRecognitionSupported ? <Mic size={24} /> : <MicOff size={24} />}
                         </button>
                         <button
                             onClick={() => setChimeEnabled(!chimeEnabled)}
@@ -293,6 +305,7 @@ const StopMotionApp = () => {
                     </button>
                 </div>
             </div>
+            {listening && speechRecognitionSupported && <span className={styles.voiceHint}>Say "capture" to take a photo</span>}
         </div>
     );
 };
