@@ -10,13 +10,13 @@ const StopMotionApp = () => {
     const [images, setImages] = useState<string[]>([]);
     const [ffmpeg, setFfmpeg] = useState<FFmpeg | null>(null);
     const [exporting, setExporting] = useState(false);
-    const [onionSkinEnabled, setOnionSkinEnabled] = useState(() =>
+    const [onionSkinEnabled, setOnionSkinEnabled] = useState<boolean>(() =>
         JSON.parse(localStorage.getItem('onionSkinEnabled') || 'true')
     );
     const [listening, setListening] = useState(() =>
         JSON.parse(localStorage.getItem('listeningEnabled') || 'false')
     );
-    const [chimeEnabled, setChimeEnabled] = useState(() =>
+    const [chimeEnabled, setChimeEnabled] = useState<boolean>(() =>
         JSON.parse(localStorage.getItem('chimeEnabled') || 'true')
     );
     const [speechRecognitionSupported, setSpeechRecognitionSupported] = useState(true);
