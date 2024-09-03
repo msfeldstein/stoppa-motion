@@ -74,13 +74,32 @@ const StopMotionApp = () => {
                     };
                     console.log('Attempting to access camera with constraints:', constraints);
                     const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    console.log('Camera stream obtained:', stream);
+
                     if (videoRef.current) {
                         videoRef.current.srcObject = stream;
-                        console.log('Camera stream set successfully');
+                        videoRef.current.onloadedmetadata = () => {
+                            console.log('Video metadata loaded. Video dimensions:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
+                        };
+                        videoRef.current.onplay = () => {
+                            console.log('Video started playing');
+                        };
+                        videoRef.current.onerror = (e) => {
+                            console.error('Video error:', e);
+                        };
+                        console.log('Camera stream set to video element');
+                    } else {
+                        console.error('Video ref is null');
                     }
                 } catch (err) {
                     console.error("Error accessing the camera:", err);
+                    if (err instanceof DOMException) {
+                        console.log('DOMException name:', err.name);
+                        console.log('DOMException message:', err.message);
+                    }
                 }
+            } else {
+                console.error('getUserMedia is not supported in this browser');
             }
         };
 
@@ -454,7 +473,15 @@ const StopMotionApp = () => {
         <div className={styles.container}>
             <div className={styles.mainContent}>
                 <div className={styles.cameraContainer}>
-                    <video ref={videoRef} autoPlay className={styles.camera}></video>
+                    <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline // Add this attribute for iOS
+                        className={styles.camera}
+                        onLoadedMetadata={() => console.log('Video metadata loaded in JSX')}
+                        onPlay={() => console.log('Video started playing in JSX')}
+                        onError={(e) => console.error('Video error in JSX:', e)}
+                    ></video>
                     <canvas ref={onionSkinCanvasRef} className={styles.onionSkin} width={640} height={480}></canvas>
                     <canvas ref={previewCanvasRef} className={styles.previewCanvas} width={640} height={480} style={{ display: 'none' }}></canvas>
                     <canvas ref={captureCanvasRef} style={{ display: 'none' }}></canvas>
