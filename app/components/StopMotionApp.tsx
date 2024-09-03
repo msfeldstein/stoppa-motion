@@ -25,6 +25,8 @@ const StopMotionApp = () => {
     const [isPreviewPlaying, setIsPreviewPlaying] = useState(false);
     const previewIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+    const [projectName, setProjectName] = useState<string>('');
+    const [availableProjects, setAvailableProjects] = useState<string[]>([]);
 
     useEffect(() => {
         // Load FFmpeg
@@ -92,6 +94,10 @@ const StopMotionApp = () => {
         // @ts-ignore
         audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
 
+        // Load available projects from local storage
+        const projectList = JSON.parse(localStorage.getItem('projectList') || '[]');
+        setAvailableProjects(projectList);
+
         return () => {
             if (recognitionRef.current) {
                 recognitionRef.current.stop();
@@ -101,6 +107,14 @@ const StopMotionApp = () => {
             }
         };
     }, []);
+
+    useEffect(() => {
+        // Save project to local storage whenever images change
+        if (projectName) {
+            localStorage.setItem('currentProjectName', projectName);
+            localStorage.setItem(`project_${projectName}`, JSON.stringify(images));
+        }
+    }, [images, projectName]);
 
     const playChime = useCallback(() => {
         if (audioContextRef.current && chimeEnabled) {
@@ -137,6 +151,10 @@ const StopMotionApp = () => {
     }, [images, onionSkinEnabled]);
 
     const captureImage = useCallback(() => {
+        if (!projectName) {
+            alert('Please create or select a project before capturing images.');
+            return;
+        }
         if (captureCanvasRef.current && videoRef.current) {
             const context = captureCanvasRef.current.getContext('2d');
             if (context) {
@@ -156,7 +174,7 @@ const StopMotionApp = () => {
                 playChime();
             }
         }
-    }, [images, onionSkinEnabled, playChime, updateOnionSkin]);
+    }, [images, onionSkinEnabled, playChime, updateOnionSkin, projectName]);
 
     useEffect(() => {
         updateOnionSkin();
@@ -316,6 +334,24 @@ const StopMotionApp = () => {
         previewIntervalRef.current = setInterval(playFrame, 200); // 5 FPS
     };
 
+    const startNewProject = () => {
+        const newProjectName = prompt('Enter a name for the new project:');
+        if (newProjectName && !availableProjects.includes(newProjectName)) {
+            setProjectName(newProjectName);
+            setImages([]);
+            setAvailableProjects(prev => [...prev, newProjectName]);
+            localStorage.setItem('projectList', JSON.stringify([...availableProjects, newProjectName]));
+        } else if (newProjectName) {
+            alert('A project with this name already exists. Please choose a different name.');
+        }
+    };
+
+    const loadProject = (name: string) => {
+        setProjectName(name);
+        const loadedImages = JSON.parse(localStorage.getItem(`project_${name}`) || '[]');
+        setImages(loadedImages);
+    };
+
     return (
         <div className={styles.container}>
             <div className={styles.mainContent}>
@@ -327,62 +363,94 @@ const StopMotionApp = () => {
                     <button onClick={captureImage} className={styles.captureButton} aria-label="Capture Frame"></button>
                 </div>
                 <div className={styles.sidePanel}>
-                    <div className={styles.gallery}>
-                        {images.map((image, index) => (
-                            <div
-                                key={index}
-                                className={`${styles.thumbnailContainer} ${styles.filled}`}
-                                style={{
-                                    transform: index === draggedIndex ? `translateX(${dragOffset}px)` : 'none',
-                                    opacity: index === draggedIndex ? 1 - (dragOffset / 150) : 1,
-                                }}
-                                onTouchStart={(e) => handleTouchStart(index, e)}
-                                onTouchMove={(e) => handleTouchMove(e)}
-                                onTouchEnd={() => handleTouchEnd()}
-                            >
-                                <img src={image} alt={`Frame ${index + 1}`} className={styles.thumbnail} />
+                    {projectName ? (
+                        <div className={styles.projectInfo}>
+                            <h2>{projectName}</h2>
+                            <button onClick={() => setProjectName('')} className={styles.closeProjectButton}>
+                                Close Project
+                            </button>
+                        </div>
+                    ) : (
+                        <div className={styles.projectList}>
+                            <h2>Projects</h2>
+                            {availableProjects.length > 0 ? (
+                                <ul>
+                                    {availableProjects.map(project => (
+                                        <li key={project}>
+                                            <button onClick={() => loadProject(project)}>{project}</button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p>No projects available</p>
+                            )}
+                            <button onClick={startNewProject} className={styles.newProjectButton}>
+                                New Project
+                            </button>
+                        </div>
+                    )}
+                    {projectName && (
+                        <>
+                            <div className={styles.gallery}>
+                                {images.map((image, index) => (
+                                    <div
+                                        key={index}
+                                        className={`${styles.thumbnailContainer} ${styles.filled}`}
+                                        style={{
+                                            transform: index === draggedIndex ? `translateX(${dragOffset}px)` : 'none',
+                                            opacity: index === draggedIndex ? 1 - (dragOffset / 150) : 1,
+                                        }}
+                                        onTouchStart={(e) => handleTouchStart(index, e)}
+                                        onTouchMove={(e) => handleTouchMove(e)}
+                                        onTouchEnd={() => handleTouchEnd()}
+                                    >
+                                        <img src={image} alt={`Frame ${index + 1}`} className={styles.thumbnail} />
+                                    </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
-                    <div className={styles.controls}>
-                        <button
-                            onClick={() => setOnionSkinEnabled(!onionSkinEnabled)}
-                            className={`${styles.iconButton} ${onionSkinEnabled ? styles.active : ''}`}
-                            aria-label="Toggle Onion Skin"
-                        >
-                            <Layers size={24} />
-                        </button>
-                        <button
-                            onClick={toggleListening}
-                            className={`${styles.iconButton} ${listening ? styles.active : ''}`}
-                            aria-label="Toggle Voice Commands"
-                            title={speechRecognitionSupported ? "Toggle Voice Commands" : "Voice Commands Not Supported"}
-                            disabled={!speechRecognitionSupported}
-                        >
-                            {speechRecognitionSupported ? <Mic size={24} /> : <MicOff size={24} />}
-                        </button>
-                        <button
-                            onClick={() => setChimeEnabled(!chimeEnabled)}
-                            className={`${styles.iconButton} ${chimeEnabled ? styles.active : ''}`}
-                            aria-label="Toggle Chime Sound"
-                        >
-                            <Volume2 size={24} />
-                        </button>
-                        <button
-                            onClick={playPreview}
-                            className={`${styles.iconButton} ${isPreviewPlaying ? styles.active : ''}`}
-                            aria-label="Preview Animation"
-                            disabled={isPreviewPlaying || images.length === 0}
-                        >
-                            <Play size={24} />
-                        </button>
-                    </div>
-                    <button onClick={exportVideo} className={styles.exportButton} disabled={exporting || images.length === 0}>
-                        {exporting ? 'Exporting...' : 'Export Video'}
-                    </button>
+                            <div className={styles.controls}>
+                                <button
+                                    onClick={() => setOnionSkinEnabled(!onionSkinEnabled)}
+                                    className={`${styles.iconButton} ${onionSkinEnabled ? styles.active : ''}`}
+                                    aria-label="Toggle Onion Skin"
+                                >
+                                    <Layers size={24} />
+                                </button>
+                                <button
+                                    onClick={toggleListening}
+                                    className={`${styles.iconButton} ${listening ? styles.active : ''}`}
+                                    aria-label="Toggle Voice Commands"
+                                    title={speechRecognitionSupported ? "Toggle Voice Commands" : "Voice Commands Not Supported"}
+                                    disabled={!speechRecognitionSupported}
+                                >
+                                    {speechRecognitionSupported ? <Mic size={24} /> : <MicOff size={24} />}
+                                </button>
+                                <button
+                                    onClick={() => setChimeEnabled(!chimeEnabled)}
+                                    className={`${styles.iconButton} ${chimeEnabled ? styles.active : ''}`}
+                                    aria-label="Toggle Chime Sound"
+                                >
+                                    <Volume2 size={24} />
+                                </button>
+                                <button
+                                    onClick={playPreview}
+                                    className={`${styles.iconButton} ${isPreviewPlaying ? styles.active : ''}`}
+                                    aria-label="Preview Animation"
+                                    disabled={isPreviewPlaying || images.length === 0}
+                                >
+                                    <Play size={24} />
+                                </button>
+                            </div>
+                            <button onClick={exportVideo} className={styles.exportButton} disabled={exporting || images.length === 0}>
+                                {exporting ? 'Exporting...' : 'Export Video'}
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
-            {listening && speechRecognitionSupported && <span className={styles.voiceHint}>Say &quot;capture&quot; to take a photo</span>}
+            {listening && speechRecognitionSupported && projectName && (
+                <span className={styles.voiceHint}>Say &quot;capture&quot; to take a photo</span>
+            )}
         </div>
     );
 };
