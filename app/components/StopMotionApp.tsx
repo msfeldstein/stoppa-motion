@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback, TouchEvent } from 'rea
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 import styles from './StopMotionApp.module.css';
-import { XCircle, Layers, Mic, Volume2, MicOff, Play } from 'lucide-react'; // Add Play icon
+import { XCircle, Layers, Mic, Volume2, MicOff, Play, RefreshCw, X } from 'lucide-react'; // Add X icon
 
 const StopMotionApp = () => {
     const [images, setImages] = useState<string[]>([]);
@@ -17,7 +17,6 @@ const StopMotionApp = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const captureCanvasRef = useRef<HTMLCanvasElement>(null);
     const onionSkinCanvasRef = useRef<HTMLCanvasElement>(null);
-    // @ts-ignore
     const recognitionRef = useRef<SpeechRecognition | null>(null);
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
     const [dragOffset, setDragOffset] = useState(0);
@@ -26,7 +25,9 @@ const StopMotionApp = () => {
     const previewIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const previewCanvasRef = useRef<HTMLCanvasElement>(null);
     const [projectName, setProjectName] = useState<string>('');
-    const [availableProjects, setAvailableProjects] = useState<string[]>([]);
+    const [availableProjects, setAvailableProjects] = useState<string[]>(JSON.parse(localStorage.getItem('projectList') || '[]'));
+    const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
+    const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
 
     useEffect(() => {
         // Load FFmpeg
@@ -42,16 +43,42 @@ const StopMotionApp = () => {
 
         loadFFmpeg();
 
+        // Detect available cameras
+        const detectCameras = async () => {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                console.log('Available cameras:', videoDevices);
+                setAvailableCameras(videoDevices);
+            } catch (error) {
+                console.error('Error detecting cameras:', error);
+            }
+        };
+
         // Set up camera
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(stream => {
+        const setupCamera = async () => {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                try {
+                    const constraints = {
+                        video: availableCameras.length > 0
+                            ? { deviceId: { exact: availableCameras[currentCameraIndex].deviceId } }
+                            : true
+                    };
+                    console.log('Attempting to access camera with constraints:', constraints);
+                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
                     if (videoRef.current) {
                         videoRef.current.srcObject = stream;
+                        console.log('Camera stream set successfully');
                     }
-                })
-                .catch(err => console.error("Error accessing the camera:", err));
-        }
+                } catch (err) {
+                    console.error("Error accessing the camera:", err);
+                }
+            }
+        };
+
+        detectCameras().then(() => {
+            setupCamera();
+        });
 
         // Check for speech recognition support
         const isSpeechRecognitionSupported = 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
@@ -59,7 +86,6 @@ const StopMotionApp = () => {
 
         if (isSpeechRecognitionSupported) {
             // Set up speech recognition
-            // @ts-ignore
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             recognitionRef.current = new SpeechRecognition();
             recognitionRef.current.continuous = true; // Change back to continuous mode
@@ -94,10 +120,6 @@ const StopMotionApp = () => {
         // @ts-ignore
         audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
 
-        // Load available projects from local storage
-        const projectList = JSON.parse(localStorage.getItem('projectList') || '[]');
-        setAvailableProjects(projectList);
-
         return () => {
             if (recognitionRef.current) {
                 recognitionRef.current.stop();
@@ -106,7 +128,7 @@ const StopMotionApp = () => {
                 audioContextRef.current.close();
             }
         };
-    }, []);
+    }, [currentCameraIndex]); // Add currentCameraIndex as a dependency
 
     useEffect(() => {
         // Save project to local storage whenever images change
@@ -140,7 +162,7 @@ const StopMotionApp = () => {
             const context = onionSkinCanvasRef.current.getContext('2d');
             if (context) {
                 context.clearRect(0, 0, 640, 480);
-                const img = new Image();
+                const img = new Image(); // This is correct, using the native Image constructor
                 img.onload = () => {
                     context.globalAlpha = 0.3;
                     context.drawImage(img, 0, 0, 640, 480);
@@ -334,6 +356,15 @@ const StopMotionApp = () => {
         previewIntervalRef.current = setInterval(playFrame, 200); // 5 FPS
     };
 
+    const clearOnionSkin = useCallback(() => {
+        if (onionSkinCanvasRef.current) {
+            const context = onionSkinCanvasRef.current.getContext('2d');
+            if (context) {
+                context.clearRect(0, 0, 640, 480);
+            }
+        }
+    }, []);
+
     const startNewProject = () => {
         const newProjectName = prompt('Enter a name for the new project:');
         if (newProjectName && !availableProjects.includes(newProjectName)) {
@@ -341,6 +372,7 @@ const StopMotionApp = () => {
             setImages([]);
             setAvailableProjects(prev => [...prev, newProjectName]);
             localStorage.setItem('projectList', JSON.stringify([...availableProjects, newProjectName]));
+            clearOnionSkin(); // Clear the onion skin
         } else if (newProjectName) {
             alert('A project with this name already exists. Please choose a different name.');
         }
@@ -350,7 +382,41 @@ const StopMotionApp = () => {
         setProjectName(name);
         const loadedImages = JSON.parse(localStorage.getItem(`project_${name}`) || '[]');
         setImages(loadedImages);
+        clearOnionSkin(); // Clear the onion skin
+        // If there are loaded images, update the onion skin with the last image
+        if (loadedImages.length > 0) {
+            updateOnionSkin();
+        }
     };
+
+    const closeProject = () => {
+        setProjectName('');
+        setImages([]);
+        clearOnionSkin(); // Clear the onion skin
+    };
+
+    const swapCamera = useCallback(() => {
+        setCurrentCameraIndex((prevIndex) => (prevIndex + 1) % availableCameras.length);
+    }, [availableCameras]);
+
+    const deleteProject = useCallback((projectName: string) => {
+        if (window.confirm(`Are you sure you want to delete the project "${projectName}"?`)) {
+            const updatedProjects = availableProjects.filter(p => p !== projectName);
+            setAvailableProjects(updatedProjects);
+            localStorage.setItem('projectList', JSON.stringify(updatedProjects));
+            localStorage.removeItem(`project_${projectName}`);
+
+            if (projectName === projectName) {
+                closeProject();
+            }
+        }
+    }, [availableProjects, projectName]);
+
+    // Add this function to get the first frame of a project
+    const getProjectFirstFrame = useCallback((projectName: string) => {
+        const projectImages = JSON.parse(localStorage.getItem(`project_${projectName}`) || '[]');
+        return projectImages.length > 0 ? projectImages[0] : null;
+    }, []);
 
     return (
         <div className={styles.container}>
@@ -361,13 +427,18 @@ const StopMotionApp = () => {
                     <canvas ref={previewCanvasRef} className={styles.previewCanvas} width={640} height={480} style={{ display: 'none' }}></canvas>
                     <canvas ref={captureCanvasRef} style={{ display: 'none' }}></canvas>
                     <button onClick={captureImage} className={styles.captureButton} aria-label="Capture Frame"></button>
+                    {availableCameras.length > 1 && (
+                        <button onClick={swapCamera} className={styles.swapCameraButton} aria-label="Swap Camera">
+                            <RefreshCw size={24} />
+                        </button>
+                    )}
                 </div>
                 <div className={styles.sidePanel}>
                     {projectName ? (
                         <div className={styles.projectInfo}>
                             <h2>{projectName}</h2>
-                            <button onClick={() => setProjectName('')} className={styles.closeProjectButton}>
-                                Close Project
+                            <button onClick={closeProject} className={styles.closeProjectButton}>
+                                Close
                             </button>
                         </div>
                     ) : (
@@ -375,11 +446,38 @@ const StopMotionApp = () => {
                             <h2>Projects</h2>
                             {availableProjects.length > 0 ? (
                                 <ul>
-                                    {availableProjects.map(project => (
-                                        <li key={project}>
-                                            <button onClick={() => loadProject(project)}>{project}</button>
-                                        </li>
-                                    ))}
+                                    {availableProjects.map(project => {
+                                        const firstFrame = getProjectFirstFrame(project);
+                                        return (
+                                            <li key={project} className={styles.projectItem}>
+                                                <button
+                                                    onClick={() => loadProject(project)}
+                                                    className={styles.projectButton}
+                                                >
+                                                    {firstFrame ? (
+                                                        <img
+                                                            src={firstFrame}
+                                                            alt={`First frame of ${project}`}
+                                                            className={styles.projectThumbnail}
+                                                        />
+                                                    ) : (
+                                                        <div className={styles.emptyThumbnail} />
+                                                    )}
+                                                    <span>{project}</span>
+                                                    <span
+                                                        className={styles.deleteProjectButton}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            deleteProject(project);
+                                                        }}
+                                                        aria-label={`Delete ${project}`}
+                                                    >
+                                                        <X size={16} />
+                                                    </span>
+                                                </button>
+                                            </li>
+                                        );
+                                    })}
                                 </ul>
                             ) : (
                                 <p>No projects available</p>

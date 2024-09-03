@@ -198,6 +198,7 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1rem;
+    padding: 8px;
 }
 
 .projectInfo h2 {
@@ -208,7 +209,7 @@
 .newProjectButton {
     padding: 0.5rem 1rem;
     background-color: #4CAF50;
-    color: white;
+    color: black;
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -264,4 +265,45 @@
 
 .closeProjectButton:hover {
     background-color: #d32f2f;
+}
+
+.projectItem {
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.projectButton {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 10px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+}
+
+.projectThumbnail {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    margin-right: 10px;
+    border-radius: 5px;
+}
+
+.emptyThumbnail {
+    width: 50px;
+    height: 50px;
+    background-color: #f0f0f0;
+    margin-right: 10px;
+    border-radius: 5px;
+}
+
+.deleteProjectButton {
+    margin-left: auto;
+}
+
+.deleteProjectButton:hover {
+    color: red;
 }
