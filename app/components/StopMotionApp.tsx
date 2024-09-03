@@ -10,15 +10,16 @@ const StopMotionApp = () => {
     const [images, setImages] = useState<string[]>([]);
     const [ffmpeg, setFfmpeg] = useState<FFmpeg | null>(null);
     const [exporting, setExporting] = useState(false);
-    const [onionSkinEnabled, setOnionSkinEnabled] = useState<boolean>(() =>
-        JSON.parse(localStorage.getItem('onionSkinEnabled') || 'true')
-    );
-    const [listening, setListening] = useState(() =>
-        JSON.parse(localStorage.getItem('listeningEnabled') || 'false')
-    );
-    const [chimeEnabled, setChimeEnabled] = useState<boolean>(() =>
+    const [onionSkinEnabled, setOnionSkinEnabled] = useState<boolean>(false);
+    useEffect(() => {
+        setOnionSkinEnabled(JSON.parse(localStorage.getItem('onionSkinEnabled') || 'true'))
+    })
+    const [listening, setListening] = useState(false);
+    useEffect(() => setListening(JSON.parse(localStorage.getItem('listeningEnabled') || 'false')))
+    const [chimeEnabled, setChimeEnabled] = useState<boolean>(false);
+    useEffect(() =>
         JSON.parse(localStorage.getItem('chimeEnabled') || 'true')
-    );
+    )
     const [speechRecognitionSupported, setSpeechRecognitionSupported] = useState(true);
     const videoRef = useRef<HTMLVideoElement>(null);
     const captureCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -31,7 +32,8 @@ const StopMotionApp = () => {
     const previewIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const previewCanvasRef = useRef<HTMLCanvasElement>(null);
     const [projectName, setProjectName] = useState<string>('');
-    const [availableProjects, setAvailableProjects] = useState<string[]>(JSON.parse(localStorage.getItem('projectList') || '[]'));
+    const [availableProjects, setAvailableProjects] = useState<string[]>([]);
+    useEffect(() => setAvailableProjects(JSON.parse(localStorage.getItem('projectList') || '[]')))
     const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
     const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
 
