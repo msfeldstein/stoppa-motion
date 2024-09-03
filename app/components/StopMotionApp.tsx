@@ -10,9 +10,15 @@ const StopMotionApp = () => {
     const [images, setImages] = useState<string[]>([]);
     const [ffmpeg, setFfmpeg] = useState<FFmpeg | null>(null);
     const [exporting, setExporting] = useState(false);
-    const [onionSkinEnabled, setOnionSkinEnabled] = useState(true);
-    const [listening, setListening] = useState(false);
-    const [chimeEnabled, setChimeEnabled] = useState(true);
+    const [onionSkinEnabled, setOnionSkinEnabled] = useState(() =>
+        JSON.parse(localStorage.getItem('onionSkinEnabled') || 'true')
+    );
+    const [listening, setListening] = useState(() =>
+        JSON.parse(localStorage.getItem('listeningEnabled') || 'false')
+    );
+    const [chimeEnabled, setChimeEnabled] = useState(() =>
+        JSON.parse(localStorage.getItem('chimeEnabled') || 'true')
+    );
     const [speechRecognitionSupported, setSpeechRecognitionSupported] = useState(true);
     const videoRef = useRef<HTMLVideoElement>(null);
     const captureCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -137,6 +143,18 @@ const StopMotionApp = () => {
             localStorage.setItem(`project_${projectName}`, JSON.stringify(images));
         }
     }, [images, projectName]);
+
+    useEffect(() => {
+        localStorage.setItem('onionSkinEnabled', JSON.stringify(onionSkinEnabled));
+    }, [onionSkinEnabled]);
+
+    useEffect(() => {
+        localStorage.setItem('listeningEnabled', JSON.stringify(listening));
+    }, [listening]);
+
+    useEffect(() => {
+        localStorage.setItem('chimeEnabled', JSON.stringify(chimeEnabled));
+    }, [chimeEnabled]);
 
     const playChime = useCallback(() => {
         if (audioContextRef.current && chimeEnabled) {
@@ -295,6 +313,10 @@ const StopMotionApp = () => {
         setImages(prevImages => prevImages.filter((_, i) => i !== index));
     }, []);
 
+    const deleteFrame = useCallback((index: number) => {
+        setImages(prevImages => prevImages.filter((_, i) => i !== index));
+    }, []);
+
     const stopPreview = () => {
         if (previewIntervalRef.current) {
             clearInterval(previewIntervalRef.current);
@@ -418,6 +440,14 @@ const StopMotionApp = () => {
         return projectImages.length > 0 ? projectImages[0] : null;
     }, []);
 
+    const toggleOnionSkin = () => {
+        setOnionSkinEnabled(prev => !prev);
+    };
+
+    const toggleChime = () => {
+        setChimeEnabled(prev => !prev);
+    };
+
     return (
         <div className={styles.container}>
             <div className={styles.mainContent}>
@@ -503,12 +533,22 @@ const StopMotionApp = () => {
                                         onTouchEnd={() => handleTouchEnd()}
                                     >
                                         <img src={image} alt={`Frame ${index + 1}`} className={styles.thumbnail} />
+                                        <button
+                                            className={styles.deleteFrameButton}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                deleteFrame(index);
+                                            }}
+                                            aria-label={`Delete frame ${index + 1}`}
+                                        >
+                                            <X size={16} />
+                                        </button>
                                     </div>
                                 ))}
                             </div>
                             <div className={styles.controls}>
                                 <button
-                                    onClick={() => setOnionSkinEnabled(!onionSkinEnabled)}
+                                    onClick={toggleOnionSkin}
                                     className={`${styles.iconButton} ${onionSkinEnabled ? styles.active : ''}`}
                                     aria-label="Toggle Onion Skin"
                                 >
@@ -524,7 +564,7 @@ const StopMotionApp = () => {
                                     {speechRecognitionSupported ? <Mic size={24} /> : <MicOff size={24} />}
                                 </button>
                                 <button
-                                    onClick={() => setChimeEnabled(!chimeEnabled)}
+                                    onClick={toggleChime}
                                     className={`${styles.iconButton} ${chimeEnabled ? styles.active : ''}`}
                                     aria-label="Toggle Chime Sound"
                                 >
@@ -546,9 +586,6 @@ const StopMotionApp = () => {
                     )}
                 </div>
             </div>
-            {listening && speechRecognitionSupported && projectName && (
-                <span className={styles.voiceHint}>Say &quot;capture&quot; to take a photo</span>
-            )}
         </div>
     );
 };
