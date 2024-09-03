@@ -17,9 +17,9 @@ const StopMotionApp = () => {
     const [listening, setListening] = useState(false);
     useEffect(() => setListening(JSON.parse(localStorage.getItem('listeningEnabled') || 'false')))
     const [chimeEnabled, setChimeEnabled] = useState<boolean>(false);
-    useEffect(() =>
+    useEffect(() => {
         JSON.parse(localStorage.getItem('chimeEnabled') || 'true')
-    )
+    })
     const [speechRecognitionSupported, setSpeechRecognitionSupported] = useState(true);
     const videoRef = useRef<HTMLVideoElement>(null);
     const captureCanvasRef = useRef<HTMLCanvasElement>(null);
