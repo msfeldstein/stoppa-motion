@@ -13,13 +13,13 @@ const StopMotionApp = () => {
     const [onionSkinEnabled, setOnionSkinEnabled] = useState<boolean>(false);
     useEffect(() => {
         setOnionSkinEnabled(JSON.parse(localStorage.getItem('onionSkinEnabled') || 'true'))
-    })
+    }, [])
     const [listening, setListening] = useState(false);
-    useEffect(() => setListening(JSON.parse(localStorage.getItem('listeningEnabled') || 'false')))
+    useEffect(() => setListening(JSON.parse(localStorage.getItem('listeningEnabled') || 'false')), [])
     const [chimeEnabled, setChimeEnabled] = useState<boolean>(false);
     useEffect(() => {
         JSON.parse(localStorage.getItem('chimeEnabled') || 'true')
-    })
+    }, [])
     const [speechRecognitionSupported, setSpeechRecognitionSupported] = useState(true);
     const videoRef = useRef<HTMLVideoElement>(null);
     const captureCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -33,7 +33,7 @@ const StopMotionApp = () => {
     const previewCanvasRef = useRef<HTMLCanvasElement>(null);
     const [projectName, setProjectName] = useState<string>('');
     const [availableProjects, setAvailableProjects] = useState<string[]>([]);
-    useEffect(() => setAvailableProjects(JSON.parse(localStorage.getItem('projectList') || '[]')))
+    useEffect(() => setAvailableProjects(JSON.parse(localStorage.getItem('projectList') || '[]')), [])
     const [availableCameras, setAvailableCameras] = useState<MediaDeviceInfo[]>([]);
     const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
 
@@ -200,9 +200,10 @@ const StopMotionApp = () => {
         if (onionSkinCanvasRef.current && onionSkinEnabled && images.length > 0) {
             const context = onionSkinCanvasRef.current.getContext('2d');
             if (context) {
-                context.clearRect(0, 0, 640, 480);
-                const img = new Image(); // This is correct, using the native Image constructor
+                console.log("UPdating onion skin")
+                const img = new Image();
                 img.onload = () => {
+                    context.clearRect(0, 0, 640, 480);
                     context.globalAlpha = 0.3;
                     context.drawImage(img, 0, 0, 640, 480);
                 };
