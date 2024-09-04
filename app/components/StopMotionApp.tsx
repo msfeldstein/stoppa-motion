@@ -23,6 +23,7 @@ const StopMotionApp = () => {
     const [speechRecognitionSupported, setSpeechRecognitionSupported] = useState(true);
     const videoRef = useRef<HTMLVideoElement>(null);
     const captureCanvasRef = useRef<HTMLCanvasElement>(null);
+    const [logs, setLogs] = useState<string[]>([])
     const onionSkinCanvasRef = useRef<HTMLCanvasElement>(null);
     const recognitionRef = useRef<SpeechRecognition | null>(null);
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -55,6 +56,8 @@ const StopMotionApp = () => {
         const detectCameras = async () => {
             try {
                 const devices = await navigator.mediaDevices.enumerateDevices();
+                console.log("Devices", devices)
+                setLogs(logs => [...logs, "Devices" + JSON.stringify(devices)])
                 const videoDevices = devices.filter(device => device.kind === 'videoinput');
                 console.log('Available cameras:', videoDevices);
                 setAvailableCameras(videoDevices);
@@ -67,10 +70,9 @@ const StopMotionApp = () => {
         const setupCamera = async () => {
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                 try {
+
                     const constraints = {
-                        video: availableCameras.length > 0
-                            ? { deviceId: { exact: availableCameras[currentCameraIndex].deviceId } }
-                            : true
+                        video: { facingMode: "environment" }
                     };
                     console.log('Attempting to access camera with constraints:', constraints);
                     const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -433,11 +435,11 @@ const StopMotionApp = () => {
         }
     };
 
-    const closeProject = () => {
+    const closeProject = useCallback(() => {
         setProjectName('');
         setImages([]);
         clearOnionSkin(); // Clear the onion skin
-    };
+    }, [clearOnionSkin]);
 
     const swapCamera = useCallback(() => {
         setCurrentCameraIndex((prevIndex) => (prevIndex + 1) % availableCameras.length);
@@ -454,7 +456,7 @@ const StopMotionApp = () => {
                 closeProject();
             }
         }
-    }, [availableProjects, projectName]);
+    }, [availableProjects, closeProject]);
 
     // Add this function to get the first frame of a project
     const getProjectFirstFrame = useCallback((projectName: string) => {
